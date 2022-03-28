@@ -3,7 +3,7 @@
 This is a library for retrieving and downloading images from Google Images.
 It uses an input query and arguments to search and retrive image objects.
 
-## Arguments
+# Arguments
 There is one required argument and two arguments in both of the main functions:
 
 **query:** Either a string or list containing the keywords to search for. If the query is a string, it will be separated into different keywords by spaces.
@@ -15,7 +15,7 @@ There is one required argument and two arguments in both of the main functions:
 **arguments:** This is a dictionary containing many optional values, all of which will be listed here. They are split into two categories: *Search arguments* and *Download arguments*:
 ***Accepted types:*** *dict*
 
-### Download arguments
+## Download arguments
 
 **download_format:** Specifies a file extension to download all images as. Must be a valid image file extension recognized by *PIL*.
 
@@ -23,7 +23,7 @@ There is one required argument and two arguments in both of the main functions:
 
 **path:** This specifies the path to create the download directory in.
 
-### Search Arguments
+## Search Arguments
 
 **color:** Filter images by the dominant color.
 ***Accepted Values:*** ('red', 'orange', 'yellow', 'green', 'teal', 'blue', 'purple', 'pink', 'white', 'gray', 'black', 'brown')
@@ -46,10 +46,10 @@ There is one required argument and two arguments in both of the main functions:
 **search_format:** Filters out images that are not a specified format. If you would like to simply download images as a specific format, use the 'download_format' argument instead.
 ***Accepted Values:*** ('jpg', 'gif', 'png', 'bmp', 'svg', 'webp', 'ico', 'raw')
 
-## Examples
+# Examples
 There are two main functions included: **urls** and **download:**
 
-### Download:
+## Download:
 
 ```python
 from GoogleImageScraper import GoogleImageScraper
@@ -68,7 +68,7 @@ The images in the list of images will follow a particular format as well:
 {'path': Image Path, 'url': Image Url}
 ```
 
-### Urls:
+## Urls:
 ```python
 from GoogleImageScraper import GoogleImageScraper
 
@@ -80,7 +80,7 @@ This function simply returns a list of image urls from the search terms     .
 
 ___
 
-### Extra
+## Extra
 
 There is one more function that may be of use to some people, but it is a bit more complicated, and there is no limit argument.
 
