@@ -10,6 +10,8 @@ class image_scraper:
             self.path = getcwd()
 
         def urls(self, query=None, limit=100, arguments=None):
+            if limit > 100:
+                raise Exception('Limit must be under 100')
             
             builtUrl = self.build_url(query, arguments)    
             searchData = self.get_html(builtUrl)
@@ -26,6 +28,8 @@ class image_scraper:
                 return None
                 
         def download(self, query=None, limit=1, arguments=None):
+            if limit > 100:
+                raise Exception('Limit must be under 100')
             
             urls = self.urls(query, arguments=arguments)
                 
