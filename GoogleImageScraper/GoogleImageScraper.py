@@ -4,19 +4,32 @@ from io import BytesIO
 from PIL import Image, UnidentifiedImageError
 from os import getcwd, mkdir
 from os.path import exists
+from DynamicHtml import DynamicHtml
+from .errors import LimitError, ArgumentError, QueryError
 
 class image_scraper:
         def __init__(self):
             self.path = getcwd()
 
         def urls(self, query=None, limit=100, arguments=None):
-            if limit > 100:
-                raise Exception('Limit must be under 100')
+            if not query:
+                raise QueryError('"query" is a required argument')        
+            elif type(query) != str and type(query) != list:
+                raise QueryError('"query" argument must be a string or list.')
             
-            builtUrl = self.build_url(query, arguments)    
+            if type(limit) != int:
+                raise LimitError('"limit" argument must be an integer.')
+            elif limit > 100:
+                raise LimitError('"limit" argument must be less than 100.')
+            
+            builtUrl = self.build_url(query, arguments)
             searchData = self.get_html(builtUrl)
-            
-            imageObjects = self.get_images(searchData)
+                
+            try:
+                imageObjects = self.get_images(searchData) 
+            except:
+                searchData = DynamicHtml(builtUrl)
+                imageObjects = self.get_images(searchData)
             
             if imageObjects:
                 urls = []
@@ -28,19 +41,21 @@ class image_scraper:
                 return None
                 
         def download(self, query=None, limit=1, arguments=None):
-            if limit > 100:
-                raise Exception('Limit must be under 100')
-            
             urls = self.urls(query, arguments=arguments)
-                
+            
+            if type(limit) != int:
+                raise LimitError('"limit" argument must be an integer.')
+            elif limit > 100:
+                raise LimitError('"limit" argument must be less than 100.')
+            
             if arguments and 'path' in arguments:
                 path = arguments['path']
             else:
                 path = self.path
             if arguments and 'directory' in arguments:
-                currentPath = f"{path}/{arguments['directory']}"
+                currentPath = f"{path}\\{arguments['directory']}"
             else:
-                currentPath = f"{path}/images"
+                currentPath = f"{path}\\images"
             try:
                 mkdir(currentPath)
             except FileExistsError:
@@ -68,13 +83,18 @@ class image_scraper:
                 if skip:
                     continue
                 
+                
+                
                 if arguments and 'download_format' in arguments:
-                    downloadPath = currentPath + f"/{'-'.join(query)}-{prefix}.{arguments['download_format'].lower()}"
+                    imageFormat = arguments['download_format'].lower()
                 else:
-                    downloadPath = currentPath + f"/{'-'.join(query)}-{prefix}.{img.format.lower()}"
+                    imageFormat = img.format.lower()
+                    
+                downloadPath = currentPath + f"\\{'-'.join(query)}-{prefix}.{imageFormat}"
+                
                 while exists(downloadPath):
                     prefix +=1
-                    downloadPath = currentPath + f"/{'-'.join(query)}-{prefix}.{img.format.lower()}"
+                    downloadPath = currentPath + f"\\{'-'.join(query)}-{prefix}.{img.format.lower()}"
                 if arguments and 'download_format' in arguments:
                     img.save(downloadPath, arguments['download_format'].upper().replace('JPG', 'JPEG'))
                 else:
@@ -116,7 +136,7 @@ class image_scraper:
                     arguments[param] = None
             
             if not query:
-                raise Exception("'query' is a required argument")
+                raise ArgumentError("'query' is a required argument")
             if type(query) == str:
                 query = query.split(' ')
             joinedQuery = '%20'.join(query)
@@ -133,7 +153,7 @@ class image_scraper:
                         builtArgs += item
                         counter += 1 
                     except NameError:
-                        raise NameError(f"Invalid argument for {param}! Valid arguments are {parameters[param].values}")
+                        raise ArgumentError(f"Invalid argument for {param}! Valid arguments are {parameters[param].values}")
 
             baseUrl = 'https://www.google.com/search?tbm=isch&q='
             
@@ -143,14 +163,13 @@ class image_scraper:
                 return baseUrl + joinedQuery
             
         def get_images(self, page):
-            startChar = page.find("AF_initDataCallback({key: \\'ds:1\\'") + 54
+            startChar = page.find('[', page.rfind('AF_initDataCallback'))
             endChar = page.find('</script>', startChar) - 20
             
             pageJson = page[startChar:endChar] 
             pageJson = json.loads(pageJson.encode('utf-8').decode('unicode_escape'))
 
-            imageObjects = pageJson[31][0][12][2]
-            
+            imageObjects = pageJson[31][0][12][2]            
             images = []
             for imageObject in imageObjects:
                 if imageObject[1]:
@@ -172,5 +191,5 @@ class image_scraper:
             
 if __name__ == '__main__':
         search = image_scraper()
-        images = search.download(query='cats', limit=40, arguments={'download_format': 'png', 'color': 'pink'})
+        images = search.download(query='cats', limit=40, arguments={'download_format': 'png', 'color': 'black'})
         print(images)
