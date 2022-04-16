@@ -1,11 +1,12 @@
-from urllib.request import urlopen, Request
 import json
 from io import BytesIO
 from PIL import Image, UnidentifiedImageError
 from os import getcwd, mkdir
-from os.path import exists
+from os.path import join, exists, basename
 from DynamicHtml import DynamicHtml
-from .errors import LimitError, ArgumentError, QueryError
+import requests
+import imghdr
+from .errors import LimitError, ArgumentError, QueryError, UnpackError
 
 class image_scraper:
         def __init__(self):
@@ -28,9 +29,13 @@ class image_scraper:
             try:
                 imageObjects = self.get_images(searchData) 
             except:
+                print('Failed to fetch images regularly. Trying with simulated browser.')
                 searchData = DynamicHtml(builtUrl)
-                imageObjects = self.get_images(searchData)
-            
+                try:
+                    imageObjects = self.get_images(searchData)
+                except:
+                    raise UnpackError('Failed to fetch image objects.')
+                
             if imageObjects:
                 urls = []
                 for image in range(limit):
@@ -52,10 +57,11 @@ class image_scraper:
                 path = arguments['path']
             else:
                 path = self.path
+                
             if arguments and 'directory' in arguments:
-                currentPath = f"{path}\\{arguments['directory']}"
+                currentPath = join(path, arguments['directory'])
             else:
-                currentPath = f"{path}\\images"
+                currentPath = join(path, 'images')
             try:
                 mkdir(currentPath)
             except FileExistsError:
@@ -69,36 +75,36 @@ class image_scraper:
             item = 0
             for i in range(limit):
                 skip = False
-                url = urls[item]
+                try:
+                    url = urls[item]
+                except IndexError:
+                    errors += limit-item
+                    break
+                name = f'{"-".join(query)}-{prefix}'
+                    
+                downloadPath = self.download_image(url, arguments, name, currentPath)
+                while downloadPath == 2:
+                    prefix += 1
+                    name = f'{"-".join(query)}-{prefix}'
+                    downloadPath = self.download_image(url, arguments, name, currentPath)
                 
-                img = self.open_image(url)
-                while img == 1:
+                while downloadPath == 1:
                     item += 1
+                    name = f'{"-".join(query)}-{prefix}'
                     try:
                         url = urls[item]
+                        downloadPath = self.download_image(url, arguments, name, currentPath)
+                        while downloadPath == 2:
+                            name = f'{"-".join(query)}-{prefix}'
+                            prefix += 1
+                            downloadPath = self.download_image(url, arguments, name, currentPath)
                     except IndexError:
                         errors += 1
                         skip = True
                 
                 if skip:
-                    continue
+                    break
                 
-                
-                
-                if arguments and 'download_format' in arguments:
-                    imageFormat = arguments['download_format'].lower()
-                else:
-                    imageFormat = img.format.lower()
-                    
-                downloadPath = currentPath + f"\\{'-'.join(query)}-{prefix}.{imageFormat}"
-                
-                while exists(downloadPath):
-                    prefix +=1
-                    downloadPath = currentPath + f"\\{'-'.join(query)}-{prefix}.{img.format.lower()}"
-                if arguments and 'download_format' in arguments:
-                    img.save(downloadPath, arguments['download_format'].upper().replace('JPG', 'JPEG'))
-                else:
-                    img.save(downloadPath)
                 images['images'].append({'path': downloadPath, 'url': url})
                 prefix += 1
                 item += 1
@@ -106,15 +112,45 @@ class image_scraper:
             images['errors'] = errors
             return images
         
-        def open_image(self, url):
-            headers={'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36"}
-            req=Request(url,None,headers)
-            response = urlopen(req)
-            try:
-                img = Image.open(BytesIO(response.read()))
-                return img
-            except UnidentifiedImageError:
-                return 1
+        def download_image(self, url, arguments, name, path):
+            if arguments and 'download_format' in arguments:
+                response = requests.get(url=url, stream=True)   
+                try:
+                    img = Image.open(BytesIO(response.content))
+                    imageFormat = arguments['download_format'].lower()
+                    downloadPath = join(path, f'{name}.{imageFormat}')
+                    if exists(downloadPath):
+                        return 2
+                    img.save(downloadPath)
+                except UnidentifiedImageError:
+                    return 1
+            else:
+                try:
+                    headers={'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36"}
+                    with requests.get(url, stream=True, timeout=5, headers=headers) as response:
+                        imgFormat = imghdr.what(None, response.content)
+                        if imgFormat == None and '.jpg' in url:
+                            imgFormat = 'jpg'
+                        elif imgFormat == None and '.jpg' not in url:
+                            return 1
+                        if imgFormat == 'jpeg':
+                            imgFormat = 'jpg'
+                        downloadPath = join(path, f'{name}.{imgFormat}')
+                        with open(downloadPath, "wb") as f:
+                            for chunk in response.iter_content(chunk_size=1024):
+                                if chunk:
+                                    f.write(chunk)
+                        print(downloadPath)
+                        return downloadPath
+                except requests.exceptions.ReadTimeout:
+                    return 1
+
+                    
+            return downloadPath
+
+        def image_name(self, url):
+            choppedEnd = url.split('#')[0].split('?')[0]
+            return basename(choppedEnd)
         
         def build_url(self, query, arguments={}):
             
@@ -184,12 +220,11 @@ class image_scraper:
         
         def get_html(self, url):
             headers={'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36"}
-            req = Request(url, headers=headers)
-            searchPage = urlopen(req)
-            searchData = str(searchPage.read())
+            searchPage = requests.get(url=url, headers=headers)
+            searchData = str(searchPage.content)
             return searchData
             
 if __name__ == '__main__':
-        search = image_scraper()
-        images = search.download(query='cats', limit=40, arguments={'download_format': 'png', 'color': 'black'})
+        scraper = image_scraper()
+        images = scraper.download(query='cats', limit=10, arguments={'color': 'black'})
         print(images)

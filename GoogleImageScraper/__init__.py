@@ -1,6 +1,7 @@
 from .GoogleImageScraper import image_scraper
-from .errors import QueryError, LimitError
+from .errors import QueryError, LimitError, UnpackError
 from DynamicHtml import DynamicHtml
+from os import getcwd
 
 
 scraper = image_scraper()
@@ -32,6 +33,19 @@ def image_objects(query=None, limit=100, arguments=None):
     except:
         print('Failed to fetch images regularly. Trying with simulated browser.')
         searchData = DynamicHtml(builtUrl)
+        try:
+            imageObjects = scraper.get_images(searchData)
+        except:
+            raise UnpackError('Failed to fetch image objects.')
         imageObjects = scraper.get_images(searchData)
-    print(imageObjects)
+        
     return imageObjects[0:limit]
+
+def download_image(url, name, path=getcwd(), download_format=None):
+    if download_format:
+        arguments = {'download_format': download_format}
+    else:
+        arguments = None
+        
+    path = scraper.download_image(url, arguments, name, path)
+    return path
