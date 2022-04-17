@@ -2,10 +2,11 @@ import json
 from io import BytesIO
 from PIL import Image, UnidentifiedImageError
 from os import getcwd, mkdir, listdir
-from os.path import join, exists, basename
+from os.path import join, basename
 from DynamicHtml import DynamicHtml
 import requests
 import imghdr
+from time import sleep
 from .errors import LimitError, ArgumentError, QueryError, UnpackError
 
 class image_scraper:
@@ -25,7 +26,15 @@ class image_scraper:
                 raise LimitError('"limit" argument must be less than 100.')
             
             builtUrl = self.build_url(query, arguments)
-            searchData = self.get_html(builtUrl)
+            
+            try:
+                searchData = self.get_html(builtUrl)
+            except requests.exceptions.ConnectionError:
+                sleep(3)
+                try:
+                    searchData = self.get_html(builtUrl)
+                except requests.exceptions.ConnectionError:
+                    raise UnpackError('Failed to connect to server. Check your internet and try again?')
                 
             try:
                 if arguments['verbose']:
@@ -38,17 +47,18 @@ class image_scraper:
                     imageObjects = self.get_images(searchData)
                 except:
                     raise UnpackError('Failed to fetch image objects.')
-                
-            urls = []
-            for image in range(limit):
-                try:
-                    urls.append(imageObjects[image]['url'])
-                except IndexError:
-                    print(f'Failed to fetch all {limit} images. Only {image} were found')
+            
+            if limit > len(imageObjects):
+                limit = len(imageObjects)
+                if 'from_download' not in arguments:
+                    print(f'Failed to fetch all {limit} images. Only {len(imageObjects)} were found')
+              
+            urls = [imageObjects[image]['url'] for image in range(limit)]
             return urls
                 
         def download(self, query=None, limit=1, arguments={}):
             arguments = self.fill_arguments(arguments)
+            arguments['from_download'] = True
             urls = self.urls(query, arguments=arguments)
             
             if type(limit) != int:
@@ -77,26 +87,27 @@ class image_scraper:
             images = {'images':[]}
             errors = 0
             item = 0
-            for image in range(limit):
+            for i in range(limit):
                 try:
                     url = urls[item]
+                    
                     name = f'{"".join(query)}-{prefix}'
                     files = listdir(currentPath)
-                    nameTaken = any([name in x for x in files])
-                    while nameTaken:
+                    nameTaken = any([name in x for x in files]) #Check if the filename is taken
+                    #If the filename is taken and overwrite is False or not specified, imcrease prefix and update name until it is not taken ==>
+                    while nameTaken and not arguments['overwrite']: 
                         prefix += 1
                         name = f'{"".join(query)}-{prefix}'
-                        nameTaken = any([name in x for x in files])
-                            
+                        nameTaken = any([name in x for x in files]) #Check if the filename is taken
+                    #Try downloading the image, and if it fails, skip to the next image ==>
                     downloadPath = self.download_image(url, arguments, name, currentPath)
-                        
                     while downloadPath == 1:
                         print('Download failed. Skipping image.')
                         item += 1
                         url = urls[item]
                         downloadPath = self.download_image(url, arguments, name, currentPath)
-                        
-                except IndexError:
+                
+                except IndexError: #Stop downloading and update errors if there are not enough urls to supply the limit.
                     errors = limit - len(images['images'])
                     break
                 
@@ -118,10 +129,7 @@ class image_scraper:
                 try:
                     img = Image.open(BytesIO(response.content))
                     imageFormat = arguments['download_format'].lower()
-                    print(imageFormat)
                     downloadPath = join(path, f'{name}.{imageFormat}')
-                    if exists(downloadPath) and not arguments['overwrite']:
-                        return 2
                     img.save(downloadPath)
                 except UnidentifiedImageError:
                     return 1
@@ -137,8 +145,6 @@ class image_scraper:
                         if imgFormat == 'jpeg':
                             imgFormat = 'jpg'
                         downloadPath = join(path, f'{name}.{imgFormat}')
-                        if exists(downloadPath) and not arguments['overwrite']:
-                            return 2
                         with open(downloadPath, "wb") as f:
                             for chunk in response.iter_content(chunk_size=1024):
                                 if chunk:
@@ -222,7 +228,6 @@ class image_scraper:
             for arg in allArguments:
                 if arg not in arguments:
                     arguments[arg] = None
-            
             return arguments
             
 if __name__ == '__main__':

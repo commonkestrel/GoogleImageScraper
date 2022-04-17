@@ -16,7 +16,7 @@ There is one required argument and two arguments in both of the main functions:
 ## Download arguments
 | Argument | Types | Description |
 | --- | --- | --- |
-| **download_format** | *str* | Specifies a file extension to download all images as. Must be a valid image file extension recognized by *PIL*.
+| **download_format** | *str* | Specifies a file extension to download all images as. Must be a valid image file extension recognized by *PIL*. ***\*Note:*** *This takes considerably longer with large amounts of images\**
 | **directory** | *str* | This specifies the directory name to download the images to. This will automatically be created in the directory the function is called in, unless the directory already exists or **path** is specified. 
 | **path** | *str* | This specifies the path to create the download directory in.  
 | **timeout** | *int float* | This specifies the maximum time the program will wait to retrieve a single image in seconds.
@@ -27,16 +27,16 @@ There is one required argument and two arguments in both of the main functions:
 
 | Argument | Accepted Values | Description |
 | --- | --- | --- |
-| **color** | *'red', 'orange', 'yellow', 'green', 'teal', 'blue', 'purple', 'pink', 'white', 'gray', 'black', 'brown'* | Filter images by the dominant color.  
-| **color_type** | *'full', 'grayscale', 'transparent'* | Filter images by the color type, full color, grayscale, or transparent.  
-| **license** | *'creative_commons', 'other_licenses'* | Filter images by the usage license.  
-| **type** | *'face', 'photo', 'clipart', 'lineart', 'gif'* | Filters by the type of images to search for. \**Not to be confused with search_format*\*  
-| **time** | *'past_day', 'past_week', 'past_month', 'past_year'* | Only finds images posted in the time specified.  
-**aspect_ratio** | *'tall', 'square', 'wide', 'panoramic'* | Specifies the aspect ratio of the images.  
-**search_format** | 'jpg', 'gif', 'png', 'bmp', 'svg', 'webp', 'ico', 'raw' | Filters out images that are not a specified format. If you would like to download images as a specific format, use the 'download_format' argument instead.  
+| **color** | *'red', 'orange', 'yellow', 'green', 'teal', 'blue', 'purple', 'pink', 'white', 'gray', 'black', 'brown'* | Filter images by the dominant color. |
+| **color_type** | *'full', 'grayscale', 'transparent'* | Filter images by the color type, full color, grayscale, or transparent. |
+| **license** | *'creative_commons', 'other_licenses'* | Filter images by the usage license. |
+| **type** | *'face', 'photo', 'clipart', 'lineart', 'gif'* | Filters by the type of images to search for. \**Not to be confused with search_format*\* |
+| **time** | *'past_day', 'past_week', 'past_month', 'past_year'* | Only finds images posted in the time specified. |
+**aspect_ratio** | *'tall', 'square', 'wide', 'panoramic'* | Specifies the aspect ratio of the images. |
+**search_format** | 'jpg', 'gif', 'png', 'bmp', 'svg', 'webp', 'ico', 'raw' | Filters out images that are not a specified format. If you would like to download images as a specific format, use the 'download_format' argument instead. |
 
 # Usage
-There are three available functions, **download**, **urls**, and **image_objects:**
+There are three available functions, **download**, **urls**,  **image_objects** and **download_image:**
 
 ## download:
 
@@ -87,15 +87,15 @@ image_objects = GoogleImageScraper.image_objects(query, limit, arguments)
 Use this function to download an image via url. This function is different from the rest in that it takes different input arguments, provided below:
 
 | Argument | Types | Description |
-| --- | ---: | :---: |
+| --- | --- | --- |
 | url | *str* | The url to download the image from. *\*required\** |
 | name | *str* | The name of the file. **Do not include file extension.** *\*required\**
 | path | *str* | The path to download the image to |
-| download_format | *str* | The format to download the image in. *Takes a while longer*
-| overwrite | *bool* | Whether to overwrite files with the same name. *Defaults to ```True```.* Raises ```DownloadError``` if ```False``` and the file exists.
+| download_format | *str* | The format to download the image in. *Takes a while longer* |
+| overwrite | *bool* | Whether to overwrite files with the same name. *Defaults to ```True```.* Raises ```DownloadError``` if ```False``` and the file exists. |
 
 # Errors
-There is a chance that you may not reach the number of images specified in the *limit* argument. This occurs when there is an error downloading an image, whether it is not in an image format, or the request times out, it can happen. When downloading a large amount of images, this may cause your limit to not be reached. The *'errors'* item in the returned dictionary from downloads is your way of keeping track of that. For example, if your *limit* was 100, and 3 images threw errors, you would get 97 images back, and the *'errors'* item would be 3. Now, if your *limit* was 20, however, and 3 images threw errors, you would still get 20 items back, and the *'errors'* item would be 0.
+There is a chance that you may not reach the number of images specified in the *limit* argument. This occurs when there is an error downloading an image, whether it is not in an image format, or the request times out, it can happen. When downloading a large amount of images, this may cause your limit to not be reached. The *'errors'* item in the returned dictionary from downloads is your way of keeping track of that. For example, if your *limit* was 100, and 3 images threw errors, you would get 97 images back, and the *'errors'* item would be 3. Now, if your *limit* was 20, however, and 3 images threw errors, you would still get 20 items back, and the *'errors'* item would be 0. This is because a max of 100 urls can be found in one query, so higher limits increases the chance that errors will cut into your *limit*.
 
 ## Included Errors
 | Error | Description|
