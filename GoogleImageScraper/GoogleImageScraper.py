@@ -1,7 +1,7 @@
 import json
 from io import BytesIO
 from PIL import Image, UnidentifiedImageError
-from os import getcwd, mkdir
+from os import getcwd, mkdir, listdir
 from os.path import join, exists, basename
 from DynamicHtml import DynamicHtml
 import requests
@@ -12,7 +12,8 @@ class image_scraper:
         def __init__(self):
             self.path = getcwd()
 
-        def urls(self, query=None, limit=100, arguments=None):
+        def urls(self, query=None, limit=100, arguments={}):
+            arguments = self.fill_arguments(arguments)
             if not query:
                 raise QueryError('"query" is a required argument')        
             elif type(query) != str and type(query) != list:
@@ -27,6 +28,8 @@ class image_scraper:
             searchData = self.get_html(builtUrl)
                 
             try:
+                if arguments['verbose']:
+                    print(f'Extracting image urls from "{builtUrl}"')
                 imageObjects = self.get_images(searchData) 
             except:
                 print('Failed to fetch images regularly. Trying with simulated browser.')
@@ -36,16 +39,16 @@ class image_scraper:
                 except:
                     raise UnpackError('Failed to fetch image objects.')
                 
-            if imageObjects:
-                urls = []
-                for image in range(limit):
+            urls = []
+            for image in range(limit):
+                try:
                     urls.append(imageObjects[image]['url'])
-                            
-                return urls
-            else:
-                return None
+                except IndexError:
+                    print(f'Failed to fetch all {limit} images. Only {image} were found')
+            return urls
                 
-        def download(self, query=None, limit=1, arguments=None):
+        def download(self, query=None, limit=1, arguments={}):
+            arguments = self.fill_arguments(arguments)
             urls = self.urls(query, arguments=arguments)
             
             if type(limit) != int:
@@ -53,15 +56,16 @@ class image_scraper:
             elif limit > 100:
                 raise LimitError('"limit" argument must be less than 100.')
             
-            if arguments and 'path' in arguments:
+            if arguments['path']:
                 path = arguments['path']
             else:
                 path = self.path
                 
-            if arguments and 'directory' in arguments:
+            if arguments['directory']:
                 currentPath = join(path, arguments['directory'])
             else:
                 currentPath = join(path, 'images')
+                
             try:
                 mkdir(currentPath)
             except FileExistsError:
@@ -73,37 +77,31 @@ class image_scraper:
             images = {'images':[]}
             errors = 0
             item = 0
-            for i in range(limit):
-                skip = False
+            for image in range(limit):
                 try:
                     url = urls[item]
-                except IndexError:
-                    errors += limit-item
-                    break
-                name = f'{"-".join(query)}-{prefix}'
-                    
-                downloadPath = self.download_image(url, arguments, name, currentPath)
-                while downloadPath == 2:
-                    prefix += 1
-                    name = f'{"-".join(query)}-{prefix}'
+                    name = f'{"".join(query)}-{prefix}'
+                    files = listdir(currentPath)
+                    nameTaken = any([name in x for x in files])
+                    while nameTaken:
+                        prefix += 1
+                        name = f'{"".join(query)}-{prefix}'
+                        nameTaken = any([name in x for x in files])
+                            
                     downloadPath = self.download_image(url, arguments, name, currentPath)
-                
-                while downloadPath == 1:
-                    item += 1
-                    name = f'{"-".join(query)}-{prefix}'
-                    try:
+                        
+                    while downloadPath == 1:
+                        print('Download failed. Skipping image.')
+                        item += 1
                         url = urls[item]
                         downloadPath = self.download_image(url, arguments, name, currentPath)
-                        while downloadPath == 2:
-                            name = f'{"-".join(query)}-{prefix}'
-                            prefix += 1
-                            downloadPath = self.download_image(url, arguments, name, currentPath)
-                    except IndexError:
-                        errors += 1
-                        skip = True
-                
-                if skip:
+                        
+                except IndexError:
+                    errors = limit - len(images['images'])
                     break
+                
+                if arguments['verbose']:
+                    print(f'Downloaded "{basename(downloadPath)}" to "{downloadPath}"')
                 
                 images['images'].append({'path': downloadPath, 'url': url})
                 prefix += 1
@@ -113,13 +111,16 @@ class image_scraper:
             return images
         
         def download_image(self, url, arguments, name, path):
-            if arguments and 'download_format' in arguments:
+            arguments = self.fill_arguments(arguments)
+                
+            if arguments['download_format']:
                 response = requests.get(url=url, stream=True)   
                 try:
                     img = Image.open(BytesIO(response.content))
                     imageFormat = arguments['download_format'].lower()
+                    print(imageFormat)
                     downloadPath = join(path, f'{name}.{imageFormat}')
-                    if exists(downloadPath):
+                    if exists(downloadPath) and not arguments['overwrite']:
                         return 2
                     img.save(downloadPath)
                 except UnidentifiedImageError:
@@ -136,21 +137,17 @@ class image_scraper:
                         if imgFormat == 'jpeg':
                             imgFormat = 'jpg'
                         downloadPath = join(path, f'{name}.{imgFormat}')
+                        if exists(downloadPath) and not arguments['overwrite']:
+                            return 2
                         with open(downloadPath, "wb") as f:
                             for chunk in response.iter_content(chunk_size=1024):
                                 if chunk:
                                     f.write(chunk)
-                        print(downloadPath)
                         return downloadPath
-                except requests.exceptions.ReadTimeout:
+                except:
                     return 1
 
-                    
             return downloadPath
-
-        def image_name(self, url):
-            choppedEnd = url.split('#')[0].split('?')[0]
-            return basename(choppedEnd)
         
         def build_url(self, query, arguments={}):
             
@@ -167,12 +164,8 @@ class image_scraper:
             if not arguments:
                 arguments = {}
             
-            for param in parameterList:
-                if param not in arguments:
-                    arguments[param] = None
-            
             if not query:
-                raise ArgumentError("'query' is a required argument")
+                raise QueryError("'query' is a required argument")
             if type(query) == str:
                 query = query.split(' ')
             joinedQuery = '%20'.join(query)
@@ -223,6 +216,14 @@ class image_scraper:
             searchPage = requests.get(url=url, headers=headers)
             searchData = str(searchPage.content)
             return searchData
+        
+        def fill_arguments(self, arguments):
+            allArguments = ['download_format', 'directory', 'path', 'color', 'color_type', 'license', 'image_type', 'time', 'aspect_ratio', 'search_format', 'verbose', 'overwrite']
+            for arg in allArguments:
+                if arg not in arguments:
+                    arguments[arg] = None
+            
+            return arguments
             
 if __name__ == '__main__':
         scraper = image_scraper()

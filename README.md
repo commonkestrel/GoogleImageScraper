@@ -2,49 +2,38 @@
 
 This is a library for retrieving and downloading images from Google Images.  
 It uses an input query and arguments to search and retrive image objects.
+These images may be protected under copyright, and you should not do anything punishable with them, like using them for commercial use.
+This library is inspired by ```google-images-download``` by **hardikvasa**, but adds a few quality of life improvments, such as being able to retrieve urls as well. This library would not be possible, however, without their work, and the people who are working to continue it.
 
 # Arguments
 There is one required argument and two arguments in both of the main functions:
-
-**query:** Either a string or list containing the keywords to search for. If the query is a string, it will be separated into different keywords by spaces.  
-***Accepted types:*** *str, list*
-
-**limit:** The amount of images to search for. Cannot be greater then 100 currently. *\*Defaults to 1\**  
-***Accepted types:*** *int*
-
-**arguments:** This is a dictionary containing many optional values, all of which will be listed here. They are split into two categories: *Search arguments* and *Download arguments*:    
-***Accepted types:*** *dict*
+| Argument | Types | Description |
+| --- | --- | --- |
+| **query:** | *str, list* | Either a string or list containing the keywords to search for. If the query is a string, it will be separated into different keywords by spaces.  
+| **limit** | *int* | The amount of images to search for. Cannot be greater then 100. *\*Defaults to 1\**  
+| **arguments:** | *dict* | This is a dictionary containing many optional values, all of which will be listed here. They are split into two categories: *Search arguments* and *Download arguments* 
 
 ## Download arguments
+| Argument | Types | Description |
+| --- | --- | --- |
+| **download_format** | *str* | Specifies a file extension to download all images as. Must be a valid image file extension recognized by *PIL*.
+| **directory** | *str* | This specifies the directory name to download the images to. This will automatically be created in the directory the function is called in, unless the directory already exists or **path** is specified. 
+| **path** | *str* | This specifies the path to create the download directory in.  
+| **timeout** | *int float* | This specifies the maximum time the program will wait to retrieve a single image in seconds.
+| **verbose** | *bool* | Set to ```True``` in order to print updates on progress to the console.
 
-**download_format:** Specifies a file extension to download all images as. Must be a valid image file extension recognized by *PIL*.
-
-**directory:** This specifies the directory name to download the images to. This will automatically be created in the directory the function is called in, unless the directory already exists or **path** is specified. 
-
-**path:** This specifies the path to create the download directory in.  
 
 ## Search Arguments
 
-**color:** Filter images by the dominant color.  
-***Accepted Values:*** ('red', 'orange', 'yellow', 'green', 'teal', 'blue', 'purple', 'pink', 'white', 'gray', 'black', 'brown')
-
-**color_type:** Filter images by the color type, full color, grayscale, or transparent.  
-***Accepted Values:*** ('full', 'grayscale', 'transparent')
-
-**license:** Filter images by the usage license.  
-***Accepted Values:*** ('creative_commons', 'other_licenses')
-
-**type:** Filters by the type of images to search for. \**Not to be confused with format*\*  
-***Accepted Values:*** ('face', 'photo', 'clipart', 'lineart', 'gif')
-
-**time:** Only finds images posted in the time specified.  
-***Accepted Values:*** ('past_day', 'past_week', 'past_month', 'past_year')
-
-**aspect_ratio** Specifies the aspect ratio of the images.  
-***Accepted Values:*** ('tall', 'square', 'wide', 'panoramic')
-
-**search_format:** Filters out images that are not a specified format. If you would like to simply download images as a specific format, use the 'download_format' argument instead.  
-***Accepted Values:*** ('jpg', 'gif', 'png', 'bmp', 'svg', 'webp', 'ico', 'raw')
+| Argument | Accepted Values | Description |
+| --- | --- | --- |
+| **color** | *'red', 'orange', 'yellow', 'green', 'teal', 'blue', 'purple', 'pink', 'white', 'gray', 'black', 'brown'* | Filter images by the dominant color.  
+| **color_type** | *'full', 'grayscale', 'transparent'* | Filter images by the color type, full color, grayscale, or transparent.  
+| **license** | *'creative_commons', 'other_licenses'* | Filter images by the usage license.  
+| **type** | *'face', 'photo', 'clipart', 'lineart', 'gif'* | Filters by the type of images to search for. \**Not to be confused with search_format*\*  
+| **time** | *'past_day', 'past_week', 'past_month', 'past_year'* | Only finds images posted in the time specified.  
+**aspect_ratio** | *'tall', 'square', 'wide', 'panoramic'* | Specifies the aspect ratio of the images.  
+**search_format** | 'jpg', 'gif', 'png', 'bmp', 'svg', 'webp', 'ico', 'raw' | Filters out images that are not a specified format. If you would like to download images as a specific format, use the 'download_format' argument instead.  
 
 # Usage
 There are three available functions, **download**, **urls**, and **image_objects:**
@@ -57,15 +46,16 @@ import GoogleImageScraper
 images = GoogleImageScraper(query, limit, arguments)
 ```
 This will download images based on the arguments.
-___
 The returned values will follow this format:
 ```python
-{'images': [Image List], 'errors': Number of Errors}
+{'images': [images], 'errors': Number of Errors}
 ```
-The images in the list of images will follow a particular format as well:
+Each of the images in the list of images will follow a particular format as well:
 ```python
 {'path': Image Path, 'url': Image Url}
 ```
+
+---
 
 ## urls:
 ```python
@@ -89,6 +79,36 @@ The usage is similar to the previous functions:
 import GoogleImageScraper
 
 image_objects = GoogleImageScraper.image_objects(query, limit, arguments)
+```
+
+---
+
+## download_image:
+Use this function to download an image via url. This function is different from the rest in that it takes different input arguments, provided below:
+
+| Argument | Types | Description |
+| --- | ---: | :---: |
+| url | *str* | The url to download the image from. *\*required\** |
+| name | *str* | The name of the file. **Do not include file extension.** *\*required\**
+| path | *str* | The path to download the image to |
+| download_format | *str* | The format to download the image in. *Takes a while longer*
+| overwrite | *bool* | Whether to overwrite files with the same name. *Defaults to ```True```.* Raises ```DownloadError``` if ```False``` and the file exists.
+
+# Errors
+There is a chance that you may not reach the number of images specified in the *limit* argument. This occurs when there is an error downloading an image, whether it is not in an image format, or the request times out, it can happen. When downloading a large amount of images, this may cause your limit to not be reached. The *'errors'* item in the returned dictionary from downloads is your way of keeping track of that. For example, if your *limit* was 100, and 3 images threw errors, you would get 97 images back, and the *'errors'* item would be 3. Now, if your *limit* was 20, however, and 3 images threw errors, you would still get 20 items back, and the *'errors'* item would be 0.
+
+## Included Errors
+| Error | Description|
+| --- | --- |
+| ```LimitError``` | Raised when the limit argument is above 100 or not the proper type. |
+| ```ArgumentError``` | Raised when an invalid value is given for an argument | 
+| ```QueryError``` | Raised if there is no query or the query is not the proper type | 
+| ```UnpackError``` | Raised if no images are found on the page. | 
+| ```DownloadError``` | Exclusive to the *download_image* function. Raised if the image failed to download. |
+
+Include these like so:
+```python
+from GoogleImageScraper.errors import <error>
 ```
 
 # Examples:
@@ -116,20 +136,11 @@ Result:
 ## download:
 ```python
 import GoogleImageScraper
-images = GoogleImageScraper.download(query='dogs', limit=10, arguments={'color':'brown', 'download_format': 'png'})
+images = GoogleImageScraper.download(query='dogs', limit=1, arguments={'color':'brown', 'download_format': 'png'})
 ```
 Result:
 ```python
-{'images':[{'path': '<path>\\images\\dogs-0.png', 'url': 'https://post.medicalnewstoday.com/wp-content/uploads/sites/3/2020/02/322868_1100-800x825.jpg'}, 
-{'path': '<path>\\images\\dogs-1.png', 'url': 'https://i.natgeofe.com/n/4f5aaece-3300-41a4-b2a8-ed2708a0a27c/domestic-dog_thumb_3x4.jpg'}, 
-{'path': '<path>\\images\\dogs-2.png', 'url': 'https://i.natgeofe.com/n/4f5aaece-3300-41a4-b2a8-ed2708a0a27c/domestic-dog_thumb_2x1.jpg'}, 
-{'path': '<path>\\images\\dogs-3.png', 'url': 'https://static01.nyt.com/images/2019/06/17/science/17DOGS/17DOGS-facebookJumbo.jpg?year=2019&h=550&w=1050&s=1201a06f5b085be8367096c545bffccc2ddca33ca3dcf57236468efcf911d023&k=ZQJBKqZ0VN'}, 
-{'path': '<path>\\images\\dogs-4.png', 'url': 'https://hips.hearstapps.com/hmg-prod.s3.amazonaws.com/images/golden-retriever-royalty-free-image-506756303-1560962726.jpg?crop=0.672xw:1.00xh;0.166xw,0&resize=640:*'}, 
-{'path': '<path>\\images\\dogs-5.png', 'url': 'https://kb.rspca.org.au/wp-content/uploads/2018/11/golder-retriever-puppy.jpeg'}, 
-{'path': '<path>\\images\\dogs-6.png', 'url': 'https://d.newsweek.com/en/full/1979380/dog-running-through-autumn-leaves.jpg'}, 
-{'path': '<path>\\images\\dogs-7.png', 'url': 'https://d17fnq9dkz9hgj.cloudfront.net/breed-uploads/2012/11/dog-how-to-select-your-new-best-friend-thinkstock99062463.jpg?bust=1513996287'}, 
-{'path': '<path>\\images\\dogs-8.png', 'url': 'https://www.thesprucepets.com/thmb/KAgiRA9eovA6l_xJz-Dz6Q3axHU=/1414x1414/smart/filters:no_upscale()/GettyImages-1201198563-fe6114423c714faa8cb1418a9b98e192.jpg'}, 
-{'path': '<path>\\images\\dogs-9.png', 'url': 'https://i.guim.co.uk/img/media/684c9d087dab923db1ce4057903f03293b07deac/205_132_1915_1150/master/1915.jpg?width=1200&height=1200&quality=85&auto=format&fit=crop&s=14a95b5026c1567b823629ba35c40aa0'}], 'errors': 0}
+{'images': [{'path': '<path>\\images\\dogs-0.png', 'url': 'https://post.medicalnewstoday.com/wp-content/uploads/sites/3/2020/02/322868_1100-800x825.jpg'}], 'errors': 0}
 ```
 
 ---
@@ -138,18 +149,9 @@ Result:
 
 ```python
 import GoogleImageScraper
-objects = GoogleImageScraper.image_objects(query='birds', limit=10, arguments={'color':'yellow'})
+objects = GoogleImageScraper.image_objects(query='birds', limit=1, arguments={'color':'yellow'})
 ```
 Results:
 ```python
-[{'thumbnail': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQwDI5y3_n2rwFQLZKrBXs5VL_J38zlZVvdZAooD8F8d7lY8ZA9iLEb1-AoBBWpGftpdoc&usqp=CAU', 'url': 'https://www.sfvaudubon.org/wp-content/uploads/2020/03/YEWAcrop.jpg', 'source_url': 'https://www.sfvaudubon.org/sfv-backyard-bird-identification/', 'source': 'sfvaudubon.org'}, 
-{'thumbnail': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSqLCldfnxEi3J7fEVaLyW5oLSdzZwb4R15gXtbLs9oUw6SIDuzFChRsnUpsPp4PgQ5BhY&usqp=CAU', 'url': 'https://www.allaboutbirds.org/guide/assets/photo/297046671-480px.jpg', 'source_url': 'https://www.allaboutbirds.org/guide/Yellow_Warbler/id', 'source': 'allaboutbirds.org'}, 
-{'thumbnail': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR1k5IhGCAPgU468tyPrgkuY9WC3T83zRxzFrTOOUs0OL_kanPG8VPKXV3euijAlzW9AsE&usqp=CAU', 'url': 'https://ca.audubon.org/sites/default/files/styles/article_teaser/public/yellowwarbler_peter_latourrette.jpg?itok=PFRtxcGN', 'source_url': 'https://ca.audubon.org/birds-0', 'source': 'ca.audubon.org'}, 
-{'thumbnail': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSVY-K2RIFC-utN12LFlVcq1CtrlzqcmqpZtcQSWOZQMM_3rLDp8ZGSlAq-68U-F6qyBV4&usqp=CAU', 'url': 'https://www.allaboutbirds.org/guide/assets/photo/297046811-480px.jpg', 'source_url': 'https://www.allaboutbirds.org/guide/Yellow_Warbler/id', 'source': 'allaboutbirds.org'}, 
-{'thumbnail': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQSI_PXGH6G-O1c6Rh5wI9WdKK4HEU0kjycO6uknyoWmDdGULbsiztifo_05CEZBD6Rx3w&usqp=CAU', 'url': 'https://wildbirdrevolution.org/wp-content/uploads/2020/03/Black-hooded-oriole-Oriolus-xanthornus-Vazhani-Kerala-by-Vidjit-Vijaysanker.jpg', 'source_url': 'https://wildbirdrevolution.org/top-25-birds-of-the-week-yellow-feathers/', 'source': 'wildbirdrevolution.org'}, 
-{'thumbnail': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRza5NoqQ99BwgDyddU2R_1ld190YL75ZIWJ6PUaGyGTQWEVOiBmrbAqzFSdmUQGfrBpJY&usqp=CAU', 'url': 'https://images.unsplash.com/photo-1618098750285-9402745c67e7?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8eWVsbG93JTIwYmlyZHxlbnwwfHwwfHw%3D&w=1000&q=80', 'source_url': 'https://unsplash.com/s/photos/yellow-bird', 'source': 'unsplash.com'}, 
-{'thumbnail': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRW-0-Z8T52RQC8n4Sy5LYRPbhanZA1NZG6vAOFxBPVZy0FT5ArqE03auGcqdKb9ZxZVqU&usqp=CAU', 'url': 'https://travisaudubon.org/home/wp-content/uploads/2018/02/APA-2017_Yellow_Warbler_P1_4700_2_Sheen_Watkins_KK-800x600.jpg', 'source_url': 'https://travisaudubon.org/tx-backyard-birds-galleries', 'source': 'travisaudubon.org'}, 
-{'thumbnail': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTP0lFA-BPPAABhRwdugJKGdr_wnAHIcJLPAJdH6JBH2tKCR4pmJXH3wPXjgUh3IhV9op8&usqp=CAU', 'url': 'https://www.thevetexpert.com/wp-content/uploads/2021/01/Small-Yellow-Birds.jpg', 'source_url': 'https://www.thevetexpert.com/12-most-famous-small-yellow-birds-you-should-know-as-a-bird-lover/', 'source': 'thevetexpert.com'}, 
-{'thumbnail': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQu9LZhIV7nrmPvIiYRfXPjKdP9y6fqURdVO5Jcz9zyI9LlMu0nehtPVZLwhVlyHR9GKlM&usqp=CAU', 'url': 'https://nc.audubon.org/sites/default/files/styles/hero_mobile/public/aud_apa-2018_prothonotary-warbler_a1-6856-3_kk_photo-michael-witt_1.jpg?itok=zcoDcNw9', 'source_url': 'https://nc.audubon.org/2020-summit', 'source': 'nc.audubon.org'}, 
-{'thumbnail': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_H6mHY3G5C_oZeO5pMyPObuqDsfPM6W8L6xlYlsPTaoXYF8dricV1datP20nHPG5EPWY&usqp=CAU', 'url': 'https://www.allaboutbirds.org/guide/assets/og/75216491-1200px.jpg', 'source_url': 'https://www.allaboutbirds.org/guide/Yellow_Warbler/id', 'source': 'allaboutbirds.org'}]
+[{'thumbnail': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQwDI5y3_n2rwFQLZKrBXs5VL_J38zlZVvdZAooD8F8d7lY8ZA9iLEb1-AoBBWpGftpdoc&usqp=CAU', 'url': 'https://www.sfvaudubon.org/wp-content/uploads/2020/03/YEWAcrop.jpg', 'source_url': 'https://www.sfvaudubon.org/sfv-backyard-bird-identification/', 'source': 'sfvaudubon.org'}, {'thumbnail': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR1k5IhGCAPgU468tyPrgkuY9WC3T83zRxzFrTOOUs0OL_kanPG8VPKXV3euijAlzW9AsE&usqp=CAU', 'url': 'https://ca.audubon.org/sites/default/files/styles/article_teaser/public/yellowwarbler_peter_latourrette.jpg?itok=PFRtxcGN', 'source_url': 'https://ca.audubon.org/birds-0', 'source': 'ca.audubon.org'}]
 ```

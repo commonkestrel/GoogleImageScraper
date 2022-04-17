@@ -7,7 +7,7 @@ README = (this_directory / "README.md").read_text()
 setup(
     name='GoogleImageScraper',
     packages=find_packages(exclude=("tests")),
-    version='2.2.0',
+    version='2.3.2',
     description='This is a library for retrieving urls and downloading images from Google Images.',
     url='https://github.com/Jibble330/GoogleImageScraper',
     author='Jibble',
