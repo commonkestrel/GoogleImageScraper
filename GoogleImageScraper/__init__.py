@@ -46,12 +46,12 @@ def download_image(url, name, path=getcwd(), download_format=None, overwrite=Tru
     if download_format:
         arguments = {'download_format': download_format}
     else:
-        arguments = None
+        arguments = {}
     arguments['overwrite'] = overwrite
     
     path = scraper.download_image(url, arguments, name, path)
     if path == 1:
         raise DownloadError('Failed to download image.')
     elif path == 2:
-        raise DownloadError('File already exists.')
+        raise FileExistsError
     return path

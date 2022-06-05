@@ -36,7 +36,7 @@ There is one required argument and two arguments in both of the main functions:
 **search_format** | 'jpg', 'gif', 'png', 'bmp', 'svg', 'webp', 'ico', 'raw' | Filters out images that are not a specified format. If you would like to download images as a specific format, use the 'download_format' argument instead. |
 
 # Usage
-There are three available functions, **download**, **urls**,  **image_objects** and **download_image:**
+There are four available functions, **download**, **urls**,  **image_objects** and **download_image**, which works differently than the others:
 
 ## download:
 
@@ -90,9 +90,9 @@ Use this function to download an image via url. This function is different from 
 | --- | --- | --- |
 | url | *str* | The url to download the image from. *\*required\** |
 | name | *str* | The name of the file. **Do not include file extension.** *\*required\**
-| path | *str* | The path to download the image to |
+| path | *str* | The path to download the image to. |
 | download_format | *str* | The format to download the image in. *Takes a while longer* |
-| overwrite | *bool* | Whether to overwrite files with the same name. *Defaults to ```True```.* Raises ```DownloadError``` if ```False``` and the file exists. |
+| overwrite | *bool* | Whether to overwrite files with the same name. *Defaults to ```True```.* Raises ```FileExistsError``` if ```False``` and the file exists. |
 
 # Errors
 There is a chance that you may not reach the number of images specified in the *limit* argument. This occurs when there is an error downloading an image, whether it is not in an image format, or the request times out, it can happen. When downloading a large amount of images, this may cause your limit to not be reached. The *'errors'* item in the returned dictionary from downloads is your way of keeping track of that. For example, if your *limit* was 100, and 3 images threw errors, you would get 97 images back, and the *'errors'* item would be 3. Now, if your *limit* was 20, however, and 3 images threw errors, you would still get 20 items back, and the *'errors'* item would be 0. This is because a max of 100 urls can be found in one query, so higher limits increases the chance that errors will cut into your *limit*.
