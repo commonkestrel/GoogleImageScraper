@@ -6,15 +6,15 @@ from os import getcwd
 
 scraper = image_scraper()
 
-def urls(query=None, limit=100, arguments={}):
+def urls(query: str = None, limit: int = 100, arguments: dict = {}) -> list:
     returnUrls = scraper.urls(query=query, limit=limit, arguments=arguments)
     return returnUrls
 
-def download(query=None, limit=1, arguments={}):
+def download(query: str = None, limit: int = 1, arguments: dict = {}) -> list:
     returnImages = scraper.download(query=query, limit=limit, arguments=arguments)
     return returnImages
 
-def image_objects(query=None, limit=100, arguments={}):
+def image_objects(query: str = None, limit: int = 100, arguments: dict = {}) -> list:
     if not query:
         raise QueryError('"query" is a required argument')        
     elif type(query) != str and type(query) != list:
@@ -42,7 +42,7 @@ def image_objects(query=None, limit=100, arguments={}):
         
     return imageObjects[0:limit+1]
 
-def download_image(url, name, path=getcwd(), download_format=None, overwrite=True):
+def download_image(url: str, name: str, path: str = getcwd(), download_format: str = None, overwrite: bool = True) -> str:
     if download_format:
         arguments = {'download_format': download_format}
     else:

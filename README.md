@@ -1,3 +1,5 @@
+<div align="center"><img src="https://raw.githubusercontent.com/commonkestrel/GoogleImageScraper/master/misc/logo.png" width=640px></div>
+
 # Google Image Scraper
 
 This is a library for retrieving and downloading images from Google Images.  
